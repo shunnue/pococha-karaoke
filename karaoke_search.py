@@ -13,7 +13,7 @@ REWARD_LIMIT = 3    # 広告を見たときに追加される回数
 # 📺 広告設定
 # ------------------------------------------
 
-# 【広告A】
+# 【広告A】（楽天）
 AD_HTML_1 = """
 <div style="text-align:center; border:2px solid #bf0000; padding:15px; border-radius:10px; background-color:#fff;">
 <p style="font-weight:bold; color:#bf0000; margin-bottom:10px;">👇 スポンサーサイト A 👇</p>
@@ -23,16 +23,18 @@ AD_HTML_1 = """
 </div>
 """
 
-# 【広告B】（自作バナー）
+# 【広告B】（Amazon／自作バナー）
+# ★修正ポイント：画像URLの末尾に ?raw=true を付けました
 AD_HTML_2 = """
 <div style="text-align:center; border:2px solid #0000bf; padding:15px; border-radius:10px; background-color:#fff;">
 <p style="font-weight:bold; color:#0000bf; margin-bottom:10px;">👇 スポンサーサイト B 👇</p>
-<a href="https://amzn.to/4bt7WVJ" style="word-wrap:break-word;"><img src="https://github.com/shunnue/pococha-karaoke/blob/main/my_banner_01.png?raw=true" border="0" style="width:100%; border-radius:5px;" alt="" title=""></a>
+<a href="https://amzn.to/4bt7WVJ" target="_blank" style="word-wrap:break-word;">
+    <img src="https://github.com/shunnue/pococha-karaoke/blob/main/my_banner_01.png?raw=true" border="0" style="width:100%; border-radius:5px;" alt="Amazon Link" title="">
+</a>
 <br><br>
 <div style="font-size:0.9rem; color:#333;"><b>Amazonのタイムセール</b></div>
 </div>
 """
-# ※ GitHub画像の末尾に ?raw=true を付けると確実に画像が表示されます
 
 # ==========================================
 
@@ -61,7 +63,6 @@ hide_streamlit_style = """
                 color: #31333F;
                 margin-bottom: 10px;
             }
-            /* ログインボタン周りの調整 */
             .stExpander {
                 border: 1px solid #ddd;
                 border-radius: 8px;
@@ -109,13 +110,9 @@ df = load_data()
 # ==========================================
 # 🟢 画面上部（ヘッダー＆ログイン）
 # ==========================================
-
-# タイトルとログインエリアを横並びまたは縦並びに配置
 st.subheader("🎤 Pococha カラオケ検索")
 
-# ログインしていない場合
 if not st.session_state['logged_in']:
-    # 開閉式のログインメニュー
     with st.expander("🔑 会員ログインはこちら"):
         st.caption("Note会員専用のIDとパスワードを入力してください")
         with st.form("top_login_form"):
@@ -138,9 +135,7 @@ if not st.session_state['logged_in']:
         
         st.markdown(f"🔰 [新規登録はこちら]({SIGNUP_URL})")
 
-# ログイン済みの場合
 else:
-    # ログイン情報を表示
     st.success(f"💎 プレミアム会員: {st.session_state['user_name']} さん")
     if st.button("ログアウト", key="top_logout"):
         st.session_state['logged_in'] = False
@@ -152,8 +147,6 @@ st.markdown("---")
 # ==========================================
 # 📱 メイン画面ロジック
 # ==========================================
-
-# 1. 残り回数の表示
 is_premium = st.session_state['logged_in']
 remaining = st.session_state.search_limit - st.session_state.search_count
 
@@ -167,7 +160,6 @@ if not is_premium:
     else:
         st.error("🔒 無料分の検索回数が終わりました")
 
-# 2. 検索ボックスの制御
 disable_input = (not is_premium) and (remaining <= 0)
 
 query = st.text_input(
@@ -177,7 +169,6 @@ query = st.text_input(
     disabled=disable_input
 )
 
-# 3. 検索処理
 if query:
     if query != st.session_state.last_query:
         if not is_premium:
@@ -190,7 +181,6 @@ if query:
         else:
             st.session_state.last_query = query
 
-    # 4. 結果表示 or 広告ブロック
     if not is_premium and remaining <= 0:
         st.warning("続けて検索するには、広告を見て回数をチャージしてください（無料）。")
         st.markdown("### ✨ チャージチャンス！")
