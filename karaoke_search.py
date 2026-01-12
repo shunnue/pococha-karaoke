@@ -3,15 +3,14 @@ import pandas as pd
 import time
 
 # ==========================================
-# ★設定エリア（後でここを書き換えてください）
-# 会員登録ボタンを押したときの飛び先URL
+# ★設定エリア
 SIGNUP_URL = "https://note.com/" 
 # ==========================================
 
 # --- 1. ページ設定 ---
 st.set_page_config(page_title="Pocochaカラオケ検索", layout="wide")
 
-# スタイル設定
+# スタイル設定（ダウンロードボタンを消す魔法を追加）
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -23,7 +22,7 @@ hide_streamlit_style = """
                 padding-left: 1rem;
                 padding-right: 1rem;
             }
-            /* リンクボタンを目立たせる */
+            /* リンクボタンのデザイン */
             .stLinkButton > a {
                 background-color: #ff4b4b;
                 color: white !important;
@@ -36,13 +35,15 @@ hide_streamlit_style = """
                 background-color: #ff3333;
                 color: white !important;
             }
+            /* ★ここが追加：表のツールバー（ダウンロードボタン等）を完全に消す */
+            [data-testid="stElementToolbar"] {
+                display: none;
+            }
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- 2. ログイン管理システム ---
-
-# セッション状態の初期化
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'user_name' not in st.session_state:
@@ -52,30 +53,22 @@ if 'user_name' not in st.session_state:
 # 🔒 ログイン画面の処理
 # -------------------------------------------
 if not st.session_state['logged_in']:
-    
-    # 画面中央に配置するためにカラムを使う
     col1, col2, col3 = st.columns([1, 2, 1])
-    
     with col2:
         st.subheader("🔒 会員専用ログイン")
         st.info("Note定期購読者様専用のツールです。")
         
-        # ログインフォーム
         with st.form("login_form"):
             input_user = st.text_input("ユーザーID", placeholder="発行されたIDを入力")
             input_pass = st.text_input("パスワード", type="password")
-            
-            # ログインボタン
             submitted = st.form_submit_button("ログイン", use_container_width=True)
 
             if submitted:
-                # 顧客台帳チェック
                 if "users" not in st.secrets:
                     st.error("システムエラー：顧客台帳(Secrets)が設定されていません。")
                 else:
                     if input_user in st.secrets["users"]:
                         if st.secrets["users"][input_user] == input_pass:
-                            # ★ログイン成功
                             st.session_state['logged_in'] = True
                             st.session_state['user_name'] = input_user
                             st.success("認証成功！")
@@ -86,17 +79,11 @@ if not st.session_state['logged_in']:
                     else:
                         st.error("IDが見つかりません。")
 
-        # -------------------------------------------
-        # ✨ 新規会員登録への誘導エリア
-        # -------------------------------------------
-        st.markdown("---") # 区切り線
+        st.markdown("---")
         st.markdown("##### 🔰 IDをお持ちでない方")
         st.write("このツールを利用するには会員登録が必要です。")
-        
-        # 会員登録ボタン（設定したURLに飛びます）
         st.link_button("👉 新規会員登録はこちら", SIGNUP_URL, use_container_width=True)
     
-    # ログインしていない人はここでプログラム終了
     st.stop() 
 
 # ==========================================
@@ -112,15 +99,12 @@ def load_data():
         for sheet_name, sheet_df in all_sheets.items():
             sheet_df.columns = range(sheet_df.shape[1])
             df_list.append(sheet_df)
-        
         df = pd.concat(df_list, ignore_index=True)
         df = df.fillna("").astype(str)
         rename_map = {0: "歌手名", 1: "楽曲名"}
         df = df.rename(columns=rename_map)
-        
         if "歌手名" in df.columns and "楽曲名" in df.columns:
             df = df[["歌手名", "楽曲名"]]
-            
         df["歌手名"] = df["歌手名"].str.strip()
         df = df[df["歌手名"] != "歌手名"]
         df = df[df["歌手名"] != ""]
@@ -152,6 +136,7 @@ if df is not None:
 
         if len(results) > 0:
             st.success(f"{len(results)} 件 ヒット")
+            # data_frameを表示（ツールバー非表示CSSが効いています）
             st.dataframe(results, use_container_width=True, hide_index=True)
         else:
             st.warning("見つかりませんでした。")
