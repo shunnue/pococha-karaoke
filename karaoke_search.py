@@ -1,51 +1,59 @@
 import streamlit as st
 import pandas as pd
 
-# --- 1. ページ設定 ---
-st.set_page_config(page_title="ポコチャカラオケ検索", layout="wide")
+# ==========================================
+# ★設定エリア
+BLOG_URL = "https://your-blog-url.com" 
+# ==========================================
 
-# 見た目をスッキリさせる設定
+# --- 1. ページ設定 ---
+st.set_page_config(page_title="Pocochaカラオケ検索", layout="wide")
+
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
             header {visibility: hidden;}
             .block-container {
-                padding-top: 2rem;
-                padding-bottom: 2rem;
-                padding-left: 2rem;
-                padding-right: 2rem;
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
             }
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- 2. データの読み込み（最強モード） ---
+# --- ★プロテクト機能（診断モード） ---
+query_params = st.query_params
+
+# 画面上に「今どんな合言葉を受け取っているか」を表示する（デバッグ用）
+# st.write("【診断用】受け取ったパラメータ:", query_params)
+
+if "embed" not in query_params:
+    st.warning("⚠️ 本来ならここでロックがかかりますが、現在はテストのため通過させます。")
+    # st.stop()  ← ここをコメントアウトして、強制停止しないようにしました
+
+# --- 2. データの読み込み ---
 @st.cache_data
 def load_data():
     try:
-        # フォルダ内の 'data.xlsx' を読み込みます
         all_sheets = pd.read_excel("data.xlsx", sheet_name=None, header=None)
         
         df_list = []
         for sheet_name, sheet_df in all_sheets.items():
-            # 列番号を強制的にリセット
             sheet_df.columns = range(sheet_df.shape[1])
             df_list.append(sheet_df)
         
-        # 合体
         df = pd.concat(df_list, ignore_index=True)
         df = df.fillna("").astype(str)
         
-        # 列名を変更
         rename_map = {0: "歌手名", 1: "楽曲名"}
         df = df.rename(columns=rename_map)
 
-        # 必要な列だけ残す
         if "歌手名" in df.columns and "楽曲名" in df.columns:
             df = df[["歌手名", "楽曲名"]]
 
-        # ゴミ掃除
         df["歌手名"] = df["歌手名"].str.strip()
         df = df[df["歌手名"] != "歌手名"]
         df = df[df["歌手名"] != ""]
@@ -59,29 +67,29 @@ def load_data():
 
 df = load_data()
 
-# --- 3. 画面表示 ---
-st.title("🎤 ポコチャカラオケ検索")
+# --- 3. アプリの画面構成 ---
+st.subheader("🎤 ポコチャカラオケ検索ツール")
 
 if df is not None:
-    # 検索ボックス
-    search_query = st.text_input("曲名・歌手名を入力", placeholder="例: マリーゴールド")
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        search_query = st.text_input("", placeholder="キーワードを入力（例：EXILE, マリーゴールド）", label_visibility="collapsed")
     
+    st.markdown("---")
+
     if search_query:
-        # 検索実行
         mask = df.apply(lambda row: row.str.contains(search_query, case=False).any(), axis=1)
         results = df[mask]
 
-        st.success(f"{len(results)} 件 ヒットしました")
-        
         if len(results) > 0:
+            st.success(f"{len(results)} 件 ヒット")
             st.dataframe(results, use_container_width=True, hide_index=True)
         else:
             st.warning("見つかりませんでした。")
     else:
-        # 何も入力していない時は全リストを少し表示
-        st.info("👇 全リスト")
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.info("👆 上のボックスに探したい曲名や歌手名を入力してください。")
+        with st.expander("データを確認（最初の50件）"):
+            st.dataframe(df.head(50), use_container_width=True, hide_index=True)
 
 else:
-    st.error("⚠️ データファイルが見つかりません。")
-    st.info("同じフォルダに『data.xlsx』を入れてください。")
+    st.error("⚠️ データファイル(data.xlsx)が見つかりません。")
