@@ -164,21 +164,20 @@ if query:
         st.warning("続けて検索するには、広告を見て回数をチャージしてください（無料）。")
         st.markdown("### ✨ チャージチャンス！")
         
-        # ★★★ 楽天アフィリエイト埋め込みエリア ★★★
-        st.markdown("""
-        <div style="text-align:center; border:2px solid #bf0000; padding:15px; border-radius:10px; background-color:#fff;">
-            <p style="font-weight:bold; color:#bf0000; margin-bottom:10px;">👇 スポンサーサイトをチェックしてチャージ 👇</p>
-            
-            <a href="https://hb.afl.rakuten.co.jp/hsc/4ffa876e.80dc9404.4ffa8711.4e90cb43/_RTLink123938?link_type=pict&ut=eyJwYWdlIjoic2hvcCIsInR5cGUiOiJwaWN0IiwiY29sIjoxLCJjYXQiOiI1OCIsImJhbiI6MzIzMDk1MSwiYW1wIjpmYWxzZX0%3D" target="_blank" rel="nofollow sponsored noopener" style="word-wrap:break-word;">
-                <img src="https://hbb.afl.rakuten.co.jp/hsb/4ffa876e.80dc9404.4ffa8711.4e90cb43/?me_id=1&me_adv_id=3230951&t=pict" border="0" style="margin:2px" alt="" title="">
-            </a>
-            <br><br>
-            <div style="font-size:0.9rem; color:#333;">
-                <b>楽天市場でお得な商品をチェック！</b><br>
-                配信機材や生活雑貨など、人気アイテムが勢揃い。
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # ★★★ 楽天アフィリエイトHTML（インデント対策済み） ★★★
+        # HTMLを変数に入れて、左詰めで定義することでバグを防ぎます
+        rakuten_ad_html = """
+<div style="text-align:center; border:2px solid #bf0000; padding:15px; border-radius:10px; background-color:#fff;">
+<p style="font-weight:bold; color:#bf0000; margin-bottom:10px;">👇 スポンサーサイトをチェックしてチャージ 👇</p>
+<a href="https://hb.afl.rakuten.co.jp/hsc/4ffa876e.80dc9404.4ffa8711.4e90cb43/_RTLink123938?link_type=pict&ut=eyJwYWdlIjoic2hvcCIsInR5cGUiOiJwaWN0IiwiY29sIjoxLCJjYXQiOiI1OCIsImJhbiI6MzIzMDk1MSwiYW1wIjpmYWxzZX0%3D" target="_blank" rel="nofollow sponsored noopener" style="word-wrap:break-word;"><img src="https://hbb.afl.rakuten.co.jp/hsb/4ffa876e.80dc9404.4ffa8711.4e90cb43/?me_id=1&me_adv_id=3230951&t=pict" border="0" style="margin:2px" alt="" title=""></a>
+<br><br>
+<div style="font-size:0.9rem; color:#333;">
+<b>楽天市場でお得な商品をチェック！</b><br>
+人気の配信機材やアイテムが勢揃い。
+</div>
+</div>
+"""
+        st.markdown(rakuten_ad_html, unsafe_allow_html=True)
         # ★★★★★★★★★★★★★★★★★★★★★★★★★
         
         st.write("")
