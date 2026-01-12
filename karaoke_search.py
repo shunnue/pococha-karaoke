@@ -154,7 +154,7 @@ if not is_premium:
     if remaining > 0:
         st.markdown(f"""
         <div class="counter-box">
-            あと {remaining} 回 検索できます
+            あと {remaining} 回 検索できます（広告見ると復活）
         </div>
         """, unsafe_allow_html=True)
     else:
