@@ -1,12 +1,39 @@
 import streamlit as st
 import pandas as pd
 import time
+import random
 
 # ==========================================
 # ★設定エリア
 SIGNUP_URL = "https://note.com/" 
 INITIAL_LIMIT = 2   # 最初の検索回数
-REWARD_LIMIT = 5    # 広告を見たときに追加される回数
+REWARD_LIMIT = 3    # 広告を見たときに追加される回数
+
+# ------------------------------------------
+# 📺 広告設定
+# ------------------------------------------
+
+# 【広告A】
+AD_HTML_1 = """
+<div style="text-align:center; border:2px solid #bf0000; padding:15px; border-radius:10px; background-color:#fff;">
+<p style="font-weight:bold; color:#bf0000; margin-bottom:10px;">👇 スポンサーサイト A 👇</p>
+<a href="https://hb.afl.rakuten.co.jp/hsc/4ffa876e.80dc9404.4ffa8711.4e90cb43/_RTLink123938?link_type=pict&ut=eyJwYWdlIjoic2hvcCIsInR5cGUiOiJwaWN0IiwiY29sIjoxLCJjYXQiOiI1OCIsImJhbiI6MzIzMDk1MSwiYW1wIjpmYWxzZX0%3D" target="_blank" rel="nofollow sponsored noopener" style="word-wrap:break-word;"><img src="https://hbb.afl.rakuten.co.jp/hsb/4ffa876e.80dc9404.4ffa8711.4e90cb43/?me_id=1&me_adv_id=3230951&t=pict" border="0" style="margin:2px" alt="" title=""></a>
+<br><br>
+<div style="font-size:0.9rem; color:#333;"><b>楽天市場で人気アイテムをチェック！</b></div>
+</div>
+"""
+
+# 【広告B】（自作バナー）
+AD_HTML_2 = """
+<div style="text-align:center; border:2px solid #0000bf; padding:15px; border-radius:10px; background-color:#fff;">
+<p style="font-weight:bold; color:#0000bf; margin-bottom:10px;">👇 スポンサーサイト B 👇</p>
+<a href="https://amzn.to/4bt7WVJ" style="word-wrap:break-word;"><img src="https://github.com/shunnue/pococha-karaoke/blob/main/my_banner_01.png?raw=true" border="0" style="width:100%; border-radius:5px;" alt="" title=""></a>
+<br><br>
+<div style="font-size:0.9rem; color:#333;"><b>Amazonのタイムセール</b></div>
+</div>
+"""
+# ※ GitHub画像の末尾に ?raw=true を付けると確実に画像が表示されます
+
 # ==========================================
 
 # --- 1. ページ設定 ---
@@ -22,11 +49,9 @@ hide_streamlit_style = """
                 padding-top: 1rem;
                 padding-bottom: 2rem;
             }
-            /* ツールバー非表示（DL防止） */
             [data-testid="stElementToolbar"] {
                 display: none;
             }
-            /* 残り回数の表示デザイン */
             .counter-box {
                 padding: 10px;
                 background-color: #f0f2f6;
@@ -35,6 +60,11 @@ hide_streamlit_style = """
                 font-weight: bold;
                 color: #31333F;
                 margin-bottom: 10px;
+            }
+            /* ログインボタン周りの調整 */
+            .stExpander {
+                border: 1px solid #ddd;
+                border-radius: 8px;
             }
             </style>
             """
@@ -77,49 +107,53 @@ def load_data():
 df = load_data()
 
 # ==========================================
-# 🟢 サイドバー（ログイン管理）
+# 🟢 画面上部（ヘッダー＆ログイン）
 # ==========================================
-with st.sidebar:
-    st.title("⚙️ 設定")
-    
-    if st.session_state['logged_in']:
-        st.success(f"ログイン中: {st.session_state['user_name']}")
-        st.info("💎 プレミアム会員特典\n- 広告なし\n- 検索回数無制限")
-        if st.button("ログアウト"):
-            st.session_state['logged_in'] = False
-            st.session_state['user_name'] = "ゲスト"
-            st.rerun()
-    else:
-        st.info("ゲストモードで利用中")
-        with st.expander("会員ログイン"):
-            with st.form("login_form"):
-                input_user = st.text_input("ユーザーID")
-                input_pass = st.text_input("パスワード", type="password")
-                submitted = st.form_submit_button("ログイン")
-                
-                if submitted:
-                    if "users" in st.secrets and input_user in st.secrets["users"]:
-                        if st.secrets["users"][input_user] == input_pass:
-                            st.session_state['logged_in'] = True
-                            st.session_state['user_name'] = input_user
-                            st.success("成功！")
-                            time.sleep(0.5)
-                            st.rerun()
-                        else:
-                            st.error("パスワードが違います")
+
+# タイトルとログインエリアを横並びまたは縦並びに配置
+st.subheader("🎤 Pococha カラオケ検索")
+
+# ログインしていない場合
+if not st.session_state['logged_in']:
+    # 開閉式のログインメニュー
+    with st.expander("🔑 会員ログインはこちら"):
+        st.caption("Note会員専用のIDとパスワードを入力してください")
+        with st.form("top_login_form"):
+            input_user = st.text_input("ユーザーID")
+            input_pass = st.text_input("パスワード", type="password")
+            submitted = st.form_submit_button("ログイン", use_container_width=True)
+            
+            if submitted:
+                if "users" in st.secrets and input_user in st.secrets["users"]:
+                    if st.secrets["users"][input_user] == input_pass:
+                        st.session_state['logged_in'] = True
+                        st.session_state['user_name'] = input_user
+                        st.success("成功！")
+                        time.sleep(0.5)
+                        st.rerun()
                     else:
-                        st.error("IDがありません")
+                        st.error("パスワードが違います")
+                else:
+                    st.error("IDがありません")
         
-        st.markdown("---")
-        st.markdown("🔰 **会員登録はこちら**")
-        st.link_button("新規登録ページへ", SIGNUP_URL)
+        st.markdown(f"🔰 [新規登録はこちら]({SIGNUP_URL})")
+
+# ログイン済みの場合
+else:
+    # ログイン情報を表示
+    st.success(f"💎 プレミアム会員: {st.session_state['user_name']} さん")
+    if st.button("ログアウト", key="top_logout"):
+        st.session_state['logged_in'] = False
+        st.session_state['user_name'] = "ゲスト"
+        st.rerun()
+
+st.markdown("---")
 
 # ==========================================
 # 📱 メイン画面ロジック
 # ==========================================
-st.subheader("🎤 Pococha カラオケ検索")
 
-# 1. 残り回数の計算と表示（ゲストのみ）
+# 1. 残り回数の表示
 is_premium = st.session_state['logged_in']
 remaining = st.session_state.search_limit - st.session_state.search_count
 
@@ -143,7 +177,7 @@ query = st.text_input(
     disabled=disable_input
 )
 
-# 3. 検索実行ロジック
+# 3. 検索処理
 if query:
     if query != st.session_state.last_query:
         if not is_premium:
@@ -156,32 +190,17 @@ if query:
         else:
             st.session_state.last_query = query
 
-    # 4. 結果表示 or 制限ブロック表示
+    # 4. 結果表示 or 広告ブロック
     if not is_premium and remaining <= 0:
-        # ==========================
-        # 🚧 制限到達時の「広告リワード」画面
-        # ==========================
         st.warning("続けて検索するには、広告を見て回数をチャージしてください（無料）。")
         st.markdown("### ✨ チャージチャンス！")
         
-        # ★★★ 楽天アフィリエイトHTML（インデント対策済み） ★★★
-        # HTMLを変数に入れて、左詰めで定義することでバグを防ぎます
-        rakuten_ad_html = """
-<div style="text-align:center; border:2px solid #bf0000; padding:15px; border-radius:10px; background-color:#fff;">
-<p style="font-weight:bold; color:#bf0000; margin-bottom:10px;">👇 スポンサーサイトをチェックしてチャージ 👇</p>
-<a href="https://hb.afl.rakuten.co.jp/hsc/4ffa876e.80dc9404.4ffa8711.4e90cb43/_RTLink123938?link_type=pict&ut=eyJwYWdlIjoic2hvcCIsInR5cGUiOiJwaWN0IiwiY29sIjoxLCJjYXQiOiI1OCIsImJhbiI6MzIzMDk1MSwiYW1wIjpmYWxzZX0%3D" target="_blank" rel="nofollow sponsored noopener" style="word-wrap:break-word;"><img src="https://hbb.afl.rakuten.co.jp/hsb/4ffa876e.80dc9404.4ffa8711.4e90cb43/?me_id=1&me_adv_id=3230951&t=pict" border="0" style="margin:2px" alt="" title=""></a>
-<br><br>
-<div style="font-size:0.9rem; color:#333;">
-<b>楽天市場でお得な商品をチェック！</b><br>
-人気の配信機材やアイテムが勢揃い。
-</div>
-</div>
-"""
-        st.markdown(rakuten_ad_html, unsafe_allow_html=True)
-        # ★★★★★★★★★★★★★★★★★★★★★★★★★
+        # ★★★ 広告切り替えロジック ★★★
+        selected_ad = random.choice([AD_HTML_1, AD_HTML_2])
+        st.markdown(selected_ad, unsafe_allow_html=True)
+        # ★★★★★★★★★★★★★★★★★
         
         st.write("")
-        # リワードボタン
         if st.button(f"🎁 広告を見ました（+{REWARD_LIMIT}回 追加）", use_container_width=True):
             st.session_state.search_limit += REWARD_LIMIT
             st.balloons()
@@ -191,11 +210,9 @@ if query:
         st.info("💡 会員登録すると、広告なしで無制限に使えます。")
 
     else:
-        # 🔍 通常の検索結果画面
         if df is not None and query:
             mask = df.apply(lambda row: row.str.contains(query, case=False).any(), axis=1)
             results = df[mask]
-
             if len(results) > 0:
                 st.success(f"✨ {len(results)} 件 ヒット")
                 st.dataframe(results, use_container_width=True, hide_index=True)
