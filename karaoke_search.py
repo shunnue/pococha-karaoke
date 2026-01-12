@@ -41,13 +41,10 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- 2. セッション状態の管理 ---
-# ログイン状態
 if 'logged_in' not in st.session_state:
     st.session_state['logged_in'] = False
 if 'user_name' not in st.session_state:
     st.session_state['user_name'] = "ゲスト"
-
-# 検索回数管理（ゲスト用）
 if 'search_count' not in st.session_state:
     st.session_state.search_count = 0
 if 'search_limit' not in st.session_state:
@@ -136,8 +133,7 @@ if not is_premium:
     else:
         st.error("🔒 無料分の検索回数が終わりました")
 
-# 2. 検索ボックスの表示
-# 制限オーバーのゲストには、入力ボックスを無効化（disabled）する
+# 2. 検索ボックスの制御
 disable_input = (not is_premium) and (remaining <= 0)
 
 query = st.text_input(
@@ -149,15 +145,13 @@ query = st.text_input(
 
 # 3. 検索実行ロジック
 if query:
-    # 新しい検索ワードが入力された場合のみカウントを進める
     if query != st.session_state.last_query:
         if not is_premium:
             if remaining > 0:
                 st.session_state.search_count += 1
                 st.session_state.last_query = query
-                st.rerun() # カウント更新のためにリロード
+                st.rerun()
             else:
-                # 制限オーバー時は検索させない
                 pass
         else:
             st.session_state.last_query = query
@@ -168,36 +162,37 @@ if query:
         # 🚧 制限到達時の「広告リワード」画面
         # ==========================
         st.warning("続けて検索するには、広告を見て回数をチャージしてください（無料）。")
-        
         st.markdown("### ✨ チャージチャンス！")
         
-        # ★広告画像とリンク
+        # ★★★ 楽天アフィリエイト埋め込みエリア ★★★
         st.markdown("""
-        <div style="text-align:center; border:2px solid #ff4b4b; padding:10px; border-radius:10px;">
-            <p style="font-weight:bold; color:red;">👇 この広告をチェックしてチャージ 👇</p>
-            <a href="https://amzn.to/YOUR_LINK_HERE" target="_blank">
-                <img src="https://m.media-amazon.com/images/I/61kL0F-o1XL._AC_SL1000_.jpg" width="80%">
+        <div style="text-align:center; border:2px solid #bf0000; padding:15px; border-radius:10px; background-color:#fff;">
+            <p style="font-weight:bold; color:#bf0000; margin-bottom:10px;">👇 スポンサーサイトをチェックしてチャージ 👇</p>
+            
+            <a href="https://hb.afl.rakuten.co.jp/hsc/4ffa876e.80dc9404.4ffa8711.4e90cb43/_RTLink123938?link_type=pict&ut=eyJwYWdlIjoic2hvcCIsInR5cGUiOiJwaWN0IiwiY29sIjoxLCJjYXQiOiI1OCIsImJhbiI6MzIzMDk1MSwiYW1wIjpmYWxzZX0%3D" target="_blank" rel="nofollow sponsored noopener" style="word-wrap:break-word;">
+                <img src="https://hbb.afl.rakuten.co.jp/hsb/4ffa876e.80dc9404.4ffa8711.4e90cb43/?me_id=1&me_adv_id=3230951&t=pict" border="0" style="margin:2px" alt="" title="">
             </a>
             <br><br>
-            <b>YAMAHA AG03</b><br>
-            配信の必需品！音質が変わればランクも変わる。<br>
+            <div style="font-size:0.9rem; color:#333;">
+                <b>楽天市場でお得な商品をチェック！</b><br>
+                配信機材や生活雑貨など、人気アイテムが勢揃い。
+            </div>
         </div>
         """, unsafe_allow_html=True)
+        # ★★★★★★★★★★★★★★★★★★★★★★★★★
         
         st.write("")
         # リワードボタン
         if st.button(f"🎁 広告を見ました（+{REWARD_LIMIT}回 追加）", use_container_width=True):
             st.session_state.search_limit += REWARD_LIMIT
-            st.balloons() # 風船を飛ばす演出
+            st.balloons()
             st.rerun()
             
         st.markdown("---")
         st.info("💡 会員登録すると、広告なしで無制限に使えます。")
 
     else:
-        # ==========================
         # 🔍 通常の検索結果画面
-        # ==========================
         if df is not None and query:
             mask = df.apply(lambda row: row.str.contains(query, case=False).any(), axis=1)
             results = df[mask]
@@ -210,6 +205,6 @@ if query:
         elif not query:
              st.info("上のボックスに入力してください。")
 
-else: # queryが空のとき
+else:
     if is_premium:
          st.info("プレミアム会員モード：無制限に検索可能です")
